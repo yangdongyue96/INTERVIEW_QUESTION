@@ -1,0 +1,169 @@
+DATA
+import torch
+from torch.utils.data import Dataset
+import numpy as np
+from torchvision import transforms
+
+# class
+class YDataset(Dataset):
+
+    # initialize
+    def __init__(self, txt, labtxt):
+        # read data
+        fh = open(txt, 'r')
+        x1 = []
+        x2 = []
+        x3 = []
+        for line in fh:
+            line = line.strip('\n')
+            line = line.rstrip()
+            words = line.split()
+            x1.append(words[0])
+            x2.append(words[1])
+            x3.append(words[2])
+
+        self.x1 = x1
+        self.x2 = x2
+        self.x3 = x3
+        fh.close()
+        fl = open(txt, 'r')
+        y = []
+        for line in fl:
+            line = line.strip('\n')
+            line = line.rstrip()
+            words = line.split()
+            y.append(words[0])
+        self.y = y
+        fl.close()
+
+    # return length of df
+    def __len__(self):
+        return len(self.x1)
+
+    # "idx+1"column data
+    def __getitem__(self):
+        # print("__getitem__中初始化的x1:",len(self.x1))
+        self.x1 = np.array(self.x1)
+        self.x1 = np.delete(self.x1, 0)
+        self.x2 = np.array(self.x2)
+        self.x2 = np.delete(self.x2, 0)
+        self.x3 = np.array(self.x3)
+        self.x3 = np.delete(self.x3, 0)
+        self.y = np.array(self.y)
+        self.y = np.delete(self.y, 0)
+        # print("__getitem__中array后的x1:",self.x1[0])
+        self.x1 = self.x1.astype(np.float32)
+        self.x2 = self.x2.astype(np.float32)
+        self.x3 = self.x3.astype(np.float32)
+        self.y = self.y.astype(np.float32)
+        # print("__getitem__中astype()后的x1:",self.x1)
+        self.x1 = torch.from_numpy(self.x1)
+        self.x2 = torch.from_numpy(self.x2)
+        self.x3 = torch.from_numpy(self.x3)
+        self.y = np.asarray(self.y)
+        # print("__getitem__输出的x1:",self.x1)
+        return self.x1, self.x2, self.x3, self.y
+
+model
+# model
+import torch
+from torch.autograd import Variable
+import numpy as np
+from torch import nn, optim
+
+# Three - layer fully connected neural network is defined
+class YNet(nn.Module):
+    def __init__(self, in_dim, n_hidden_1, n_hidden_2, out_dim):  # 输入维度，第一层的神经元个数、第二层的神经元个数，以及第三层的神经元个数
+        super(YNet, self).__init__()
+        self.layer1 = nn.Linear(in_dim, n_hidden_1)
+        self.layer2 = nn.Linear(n_hidden_1, n_hidden_2)
+        self.layer3 = nn.Linear(n_hidden_2, out_dim)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
+
+
+# Add activation function
+class Activation_Net(nn.Module):
+    def __init__(self, in_dim, n_hidden_1, n_hidden_2, out_dim):
+        super(NeutalNetwork, self).__init__()
+        self.layer1 = nn.Sequential(  # Sequential组合结构
+            nn.Linear(in_dim, n_hidden_1), nn.ReLU(True))
+        self.layer2 = nn.Sequential(
+            nn.Linear(n_hidden_1, n_hidden_2), nn.ReLU(True))
+        self.layer3 = nn.Sequential(
+            nn.Linear(n_hidden_2, out_dim))
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
+
+
+# Add the batch standardization module, which is placed behind the full connection and in front of the non-linear connection
+class Batch_Net(nn.Module):
+    def _init__(self, in_dim, n_hidden_1, n_hidden_2, out_dim):
+        super(Batch_net, self).__init__()
+        self.layer1 = nn.Sequential(nn.Linear(in_dim, n_hidden_1), nn.BatchNormld(n_hidden_1), nn.ReLU(True))
+        self.layer2 = nn.Sequential(nn.Linear(n_hidden_1, n_hidden_2), nn.BatchNormld(n_hidden_2), nn.ReLU(True))
+        self.layer3 = nn.Sequential(nn.Linear(n_hidden_2, out_dim))
+
+    def forword(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
+
+Train
+import torch
+from torch.autograd import Variable
+import numpy as np
+from torch import nn, optim
+from torch.utils.data import DataLoader
+
+import ynet
+import data
+
+# Define the superparameter
+learning_rate = 1e-5
+n_epochs = 4000
+# read data
+train_dataset = data.YDataset("train_data.txt", "train_truth.txt")
+# test_dataset= data.YDataset("test_data.txt")
+# train_loader=DataLoader(train_dataset,batch_size=batch_size,shuffle=False)
+# test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
+
+# Import the network and define loss functions and optimization methods
+model = ynet.YNet(3, 4, 4, 1)
+# criterion=nn.CrossEntropyLoss()
+loss_fn = nn.MSELoss(size_average=False)
+optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+
+for epoch in range(n_epochs):
+    running_loss = 0.0
+    running_correct = 0
+    print("epoch {}/{}".format(epoch, n_epochs))
+    print("-" * 10)
+    # for (x1,x2,x3,label) in train_loader:
+    x1, x2, x3, y_label = train_dataset.__getitem__()
+
+    x = torch.stack((x1, x2, x3), 1)
+    # print("x.size()",x.size())
+    out = model(x)
+    # print("out.size()",out.size())
+    out = out.squeeze(-1)
+    y_label = torch.from_numpy(y_label)
+    # print("y_label.size()",y_label.size())
+    loss = loss_fn(out, y_label)  # loss function
+    print_loss = loss.data.item()
+    optimizer.zero_grad()  # grad
+    loss.backward()  # Back propagation
+    optimizer.step()  # optimize
+    running_loss += loss.item()
+    epoch += 1
+    if epoch % 2 == 0:
+        print('epoch:{},loss:{:.16f}'.format(epoch, loss.data.item()))
