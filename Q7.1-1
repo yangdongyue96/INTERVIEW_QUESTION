@@ -1,0 +1,18 @@
+def convert1to2(index, L1):
+    coor_x1 = (index % L1)
+    coor_x2 = (index // L1)
+    return [coor_x1, coor_x2]
+
+Q7_1to2 = open(r'D:\output_coordinates_7_1.txt', 'w')
+L1 = 50
+s = []
+with open(r"D:\AY20_MBDS_questions\Question 7\Question 7.1\input_index_7_1.txt") as file:
+    for line in file:
+        line = line.strip()
+        line = line.split('\t')
+        s.append(line[0])
+
+for i in s:
+ i = int(i)
+ print((convert1to2(i, L1)),file=Q7_1to2)
+Q7_1to2.close()
