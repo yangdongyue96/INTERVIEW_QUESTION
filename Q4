@@ -1,0 +1,50 @@
+def eightconnect(image):
+    def location(i, j):
+
+        if i < 0 or i >= row or j < 0 or j >= col or image[i][j] == 0 or arrived[i][j]:
+            return
+        arrived[i][j] = True
+        image[i][j] = num
+        location(i - 1, j - 1)
+        location(i + 1, j + 1)
+        location(i + 1, j - 1)
+        location(i - 1, j + 1)
+        location(i - 1, j)
+        location(i + 1, j)
+        location(i, j - 1)
+        location(i, j + 1)
+
+    if not image or len(image[0]) == 0:
+        return
+    row, col = len(image), len(image[0])
+    arrived = [[False for i in range(col)] for j in range(row)]
+    num = 0
+    for m in range(row):
+        for n in range(col):
+            if image[m][n] != 0 and not arrived[m][n]:
+                num += 1
+                location(m, n)
+
+    return image
+
+# write file
+Q4 = open (r'D:\output question 4','w')
+# question 1
+image = [[0, 0, 1, 1],
+        [1, 1, 0, 0],
+        [0, 0, 0, 0],
+        [0, 1, 1, 1],
+        [0, 1, 1, 1]]
+print((1),(eightconnect(image)),file=Q4)
+
+#question 2
+s = []
+with open('D:\AY20_MBDS_questions\Question 4\input_question_4.txt') as file:
+    for line in file:
+        line = line.strip()
+        line = line.split('\t')
+        my_line = [int(i) for i in line]
+        s.append(my_line)
+
+print((2),(eightconnect(s)),file=Q4)
+Q4.close()
