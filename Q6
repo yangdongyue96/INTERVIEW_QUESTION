@@ -1,0 +1,50 @@
+def in_or_out(point,rangelist):
+#Exclude points that are not in the range
+    rlon=[]
+    rlat=[]
+    for p in rangelist:
+        rlon.append(p[0])
+        rlat.append(p[1])
+    maxlon=max(rlon)
+    maxlat=max(rlat)
+    minlon=min(rlon)
+    minlat=min(rlat)
+    if (point[0] > maxlon or point[0] < minlon or  point[1] > maxlat or point[1] < minlat):
+        return False
+#Building a shape
+    s_list=[]
+    for i in range(0,len(rangelist)):
+        s_list_x = []
+        if i!=len(rangelist)-1:
+            s_list_x.append(rangelist[i])
+            s_list_x.append(rangelist[i+1])
+            s_list.append(s_list_x)
+        else:
+            s_list_x.append(rangelist[i])
+            s_list_x.append(rangelist[0])
+            s_list.append(s_list_x)
+#Determine the number of points at which the ray intersects each side and whether the points are on the side
+    common=0
+    for i in range(0,len(s_list)):
+        if s_list[i][1][0]-s_list[i][0][0]==0:
+            if point[0]==s_list[i][0][0]:
+                common+=1
+        else:
+            y=((s_list[i][1][1]-s_list[i][0][1])/(s_list[i][1][0]-s_list[i][0][0]))*(point[0]-s_list[i][0][0])+s_list[i][0][1]
+            if y==point[1]:#Consider the case where the intersection is on the edge
+                p=True
+            elif y>point[1] and y<=max(s_list[i][0][1],s_list[i][1][1]):
+                common+=1
+#in or out
+    if common%2!=0 or p:
+        return True
+    else:
+        return False
+f = open (r'D:\output question 6.txt','w')
+
+point_list=[[7,11],[10,14],[11,4],[12,21],[16,3],[16,10],[17,4],[18,7],[18,17],[20,7]]
+rangelist=[[7,11],[10,14],[11,4],[12,21],[16,3],[16,10],[17,4],[18,7],[18,17],[20,7]]
+for point in point_list:
+    print((point,in_or_out(point,rangelist)),file=f)
+
+f.close()
